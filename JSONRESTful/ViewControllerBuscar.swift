@@ -85,6 +85,46 @@ class ViewControllerBuscar: UIViewController, UITableViewDelegate, UITableViewDa
         }
     }
     
+    //tarea DELETE
+    func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            let pelicula = peliculas[indexPath.row]
+            
+            // Crear el alert de confirmación
+            let alert = UIAlertController(
+                title: "¿Eliminar película?",
+                message: "¿Estás seguro que deseas eliminar \(pelicula.nombre)?",
+                preferredStyle: .alert
+            )
+            
+            // Acción de cancelar
+            alert.addAction(UIAlertAction(title: "Cancelar", style: .cancel))
+            
+            // Acción de eliminar
+            alert.addAction(UIAlertAction(title: "Eliminar", style: .destructive) { _ in
+                // Construir la URL para el DELETE
+                let ruta = "http://localhost:3000/peliculas/\(pelicula.id)"
+                
+                // Llamar al método DELETE
+                self.metodoDELETE(ruta: ruta)
+                
+                // Eliminar de nuestro arreglo local
+                self.peliculas.remove(at: indexPath.row)
+                
+                // Eliminar la fila de la tabla con animación
+                tableView.deleteRows(at: [indexPath], with: .fade)
+            })
+            
+            // Mostrar el alert
+            present(alert, animated: true)
+        }
+    }
+
+    // Opcional: Personalizar el texto del botón eliminar
+    func tableView(_ tableView: UITableView, titleForDeleteConfirmationButtonForRowAt indexPath: IndexPath) -> String? {
+        return "Eliminar"
+    }
+    
     // metodos personales
     func cargarPeliculas(ruta: String, completed: @escaping () -> ()){
         let url = URL(string: ruta)
@@ -100,6 +140,29 @@ class ViewControllerBuscar: UIViewController, UITableViewDelegate, UITableViewDa
                 }
             }
         }.resume()
+    }
+    
+    //tarea DELETE
+    func metodoDELETE(ruta: String) {
+        let url: URL = URL(string: ruta)!
+        var request = URLRequest(url: url)
+        let session = URLSession.shared
+        request.httpMethod = "DELETE"
+        
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        let task = session.dataTask(with: request, completionHandler: {(data, response, error) in
+            if (data != nil) {
+                do {
+                    let dict = try JSONSerialization.jsonObject(with: data!, options: JSONSerialization.ReadingOptions.mutableLeaves)
+                    print(dict);
+                } catch {
+                    // catch any exception here
+                }
+            }
+        })
+        task.resume()
     }
     
     func mostrarAlerta(titulo:String, mensaje:String, accion:String){
